@@ -19,11 +19,20 @@ import authRoutes from './Routes/authRoutes.js';
 const app = express();
 const PORT = Number(process.env.PORT || process.env.API_PORT || 5000);
 
-const configuredFrontendOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
+const configuredFrontendOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
+  .split(',')
+  .map((value) => {
+    try {
+      return new URL(value.trim()).origin;
+    } catch {
+      return '';
+    }
+  })
+  .filter(Boolean);
 app.use(cors({
   origin(origin, callback) {
     const localDevelopmentOrigin = Boolean(origin && /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin));
-    if (!origin || origin === configuredFrontendOrigin || localDevelopmentOrigin) return callback(null, true);
+    if (!origin || configuredFrontendOrigins.includes(origin) || localDevelopmentOrigin) return callback(null, true);
     return callback(null, false);
   },
   credentials: true
