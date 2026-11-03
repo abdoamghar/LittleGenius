@@ -11,6 +11,7 @@ import CourseSummaryCard from "@/components/teacher/CourseSummaryCard";
 import CreateCourseDialog from "@/components/teacher/CreateCourseDialog";
 import CoursePreviewDialog from "@/components/teacher/CoursePreviewDialog";
 import AssignCourseDialog from "@/components/teacher/AssignCourseDialog";
+import ConfirmActionDialog from "@/components/common/ConfirmActionDialog";
 
 export default function TeacherCoursesPage() {
   const params = useSearchParams();
@@ -23,6 +24,8 @@ export default function TeacherCoursesPage() {
   const [creating, setCreating] = useState(false);
   const [previewCourse, setPreviewCourse] = useState(null);
   const [assignEntry, setAssignEntry] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,6 +69,21 @@ export default function TeacherCoursesPage() {
       }
     : null;
 
+  const deleteCourse = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.deleteCourse(deleteTarget.id);
+      toast({ title: "Course deleted", description: `“${deleteTarget.title}” and its lessons were removed.` });
+      setDeleteTarget(null);
+      await load();
+    } catch (e) {
+      toast({ title: "Could not delete course", description: e.message || "Please try again." });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -98,6 +116,7 @@ export default function TeacherCoursesPage() {
               entry={entry}
               onPreview={setPreviewCourse}
               onAssign={setAssignEntry}
+              onDelete={setDeleteTarget}
             />
           ))}
         </div>
@@ -136,6 +155,15 @@ export default function TeacherCoursesPage() {
           toast({ title: "Course assigned", description: "Students in those classes can now open it." });
           load();
         }}
+      />
+      <ConfirmActionDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete this course?"
+        description={deleteTarget ? `“${deleteTarget.title}” and its chapters, lessons, activities, and saved results will be permanently deleted. It will also be unassigned from classes.` : "This course will be permanently deleted."}
+        confirmLabel="Delete course"
+        pending={deleting}
+        onConfirm={deleteCourse}
       />
     </div>
   );

@@ -50,7 +50,9 @@ export default function UserMenu() {
     setSaving(true);
     setError("");
     try {
-      await updateProfile({ full_name: fullName, subject, school });
+      const details = { full_name: fullName };
+      if (user?.role === "admin") Object.assign(details, { subject, school });
+      await updateProfile(details);
       setProfileOpen(false);
     } catch (cause) {
       setError(cause.message || "We could not save your profile.");

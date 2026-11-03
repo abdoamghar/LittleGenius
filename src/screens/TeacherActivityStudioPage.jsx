@@ -31,6 +31,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { ErrorState, LoadingState, StatusPill } from "@/components/common/StateBlocks";
 import ActivityDraftEditor from "@/components/teacher/ActivityDraftEditor";
 import DraftPreview from "@/components/teacher/DraftPreview";
+import ConfirmActionDialog from "@/components/common/ConfirmActionDialog";
 import { cn } from "@/lib/utils";
 
 const CONTENT_KEYS = ["questions", "pairs", "parts", "wordBank"];
@@ -57,6 +58,8 @@ export default function TeacherActivityStudioPage() {
   const [message, setMessage] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
 
   const loadLessons = useCallback(async () => {
     try {
@@ -188,13 +191,19 @@ export default function TeacherActivityStudioPage() {
   };
 
   const discard = async () => {
+    if (!draft) return;
+    setDiscarding(true);
+    setMessage(null);
     try {
       await api.discardDraft(draft.id);
       toast({ title: "Draft discarded", description: "Nothing was shared with students." });
+      router.push("/teacher/drafts");
     } catch {
-      /* leave it in the list if the removal fails */
+      setMessage({ tone: "coral", text: "We could not discard this draft. Please try again." });
+    } finally {
+      setDiscarding(false);
+      setDiscardConfirmOpen(false);
     }
-    router.push("/teacher/drafts");
   };
 
   if (loading) return <LoadingState label="Opening the draft" rows={1} />;
@@ -298,11 +307,23 @@ export default function TeacherActivityStudioPage() {
                 </div>
               </div>
               {activeLesson ? (
-                <p className="rounded-2xl bg-cream px-4 py-3 text-sm text-inkMuted">
-                  <span className="font-bold text-ink">Working from: </span>
-                  {activeLesson.summary || activeLesson.title}
-                  {activeLesson.keyIdea ? ` Big idea: ${activeLesson.keyIdea}` : ""}
-                </p>
+                activeLesson.hasLessonContent ? (
+                  <p className="rounded-2xl bg-cream px-4 py-3 text-sm text-inkMuted">
+                    <span className="font-bold text-ink">Working from: </span>
+                    {activeLesson.summary || activeLesson.keyIdea || activeLesson.title}
+                    {activeLesson.keyIdea && activeLesson.summary ? ` Big idea: ${activeLesson.keyIdea}` : ""}
+                  </p>
+                ) : (
+                  <div role="status" className="rounded-2xl border border-coral-200 bg-coral-50 px-4 py-3 text-sm text-coral-600">
+                    <p className="font-bold">This lesson has no text for the AI to use yet.</p>
+                    <p className="mt-1">
+                      Add a lesson summary in the course editor and save the course before drafting an activity.
+                      {courseId ? (
+                        <> <Link href={`/teacher/courses/${courseId}/edit`} className="font-bold underline">Open the course editor</Link>.</>
+                      ) : null}
+                    </p>
+                  </div>
+                )
               ) : null}
             </div>
 
@@ -312,7 +333,7 @@ export default function TeacherActivityStudioPage() {
               </p>
             ) : null}
 
-            <Button size="lg" className="gap-2" onClick={() => generate(0)} disabled={generating}>
+            <Button size="lg" className="gap-2" onClick={() => generate(0)} disabled={generating || !activeLesson?.hasLessonContent}>
               {generating ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -481,10 +502,12 @@ export default function TeacherActivityStudioPage() {
                   )}
                   Regenerate a fresh draft
                 </Button>
-                <Button variant="ghost" className="w-full gap-2 text-coral-600" onClick={discard} disabled={generating}>
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                  Discard draft
-                </Button>
+                {!approved ? (
+                  <Button variant="ghost" className="w-full gap-2 text-coral-600" onClick={() => setDiscardConfirmOpen(true)} disabled={generating || discarding}>
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    Discard draft
+                  </Button>
+                ) : null}
               </section>
 
               <section className="lg-card space-y-2 p-5">
@@ -534,6 +557,15 @@ export default function TeacherActivityStudioPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmActionDialog
+        open={discardConfirmOpen}
+        onOpenChange={setDiscardConfirmOpen}
+        title="Discard this activity draft?"
+        description={draft ? `“${draft.title}” will be permanently deleted. Students have not seen it.` : "This draft will be permanently deleted."}
+        confirmLabel="Discard draft"
+        pending={discarding}
+        onConfirm={discard}
+      />
     </div>
   );
 }

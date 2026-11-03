@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ClipboardList, FileEdit, Plus, Trash2, Wand2 } from "lucide-react";
+import { ClipboardList, FileEdit, Plus, Sparkles, Trash2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { StatusPill } from "@/components/common/StateBlocks";
 const TYPE_LABEL = { quiz: "Quiz", match: "Matching", fill: "Fill in the blanks" };
 
 /** Course editor outline: chapters, lessons and the activities inside each lesson. */
-export default function CourseOutline({ chapters, onChange, disabled, onDraftActivity }) {
+export default function CourseOutline({ chapters, onChange, disabled, onDraftActivity, onDeleteActivity, onInsertDemo }) {
   const patchChapter = (chapterId, patch) =>
     onChange(chapters.map((c) => (c.id === chapterId ? { ...c, ...patch } : c)));
 
@@ -42,6 +42,7 @@ export default function CourseOutline({ chapters, onChange, disabled, onDraftAct
               variant="ghost"
               className="gap-2 text-coral-600"
               disabled={disabled || chapters.length === 1}
+              title="Removing this chapter and saving will delete its lessons, activities, and saved results."
               onClick={() => onChange(chapters.filter((c) => c.id !== chapter.id))}
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -62,6 +63,7 @@ export default function CourseOutline({ chapters, onChange, disabled, onDraftAct
                     size="sm"
                     className="gap-2 text-coral-600"
                     disabled={disabled || chapter.lessons.length === 1}
+                    title="Removing this lesson and saving will delete its activities and saved results."
                     onClick={() =>
                       patchChapter(chapter.id, { lessons: chapter.lessons.filter((l) => l.id !== lesson.id) })
                     }
@@ -95,7 +97,20 @@ export default function CourseOutline({ chapters, onChange, disabled, onDraftAct
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor={`lesson-summary-${lesson.id}`}>Lesson summary</Label>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Label htmlFor={`lesson-summary-${lesson.id}`}>Lesson summary</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      disabled={disabled}
+                      onClick={() => onInsertDemo(chapter.id, lesson.id)}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                      Fill Family Members demo
+                    </Button>
+                  </div>
                   <Textarea
                     id={`lesson-summary-${lesson.id}`}
                     rows={2}
@@ -140,6 +155,18 @@ export default function CourseOutline({ chapters, onChange, disabled, onDraftAct
                               AI drafted
                             </span>
                           ) : null}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-coral-600"
+                            disabled={disabled}
+                            onClick={() => onDeleteActivity(activity)}
+                            aria-label={`Delete ${activity.title}`}
+                            title="Delete activity"
+                          >
+                            <Trash2 aria-hidden="true" />
+                          </Button>
                         </li>
                       ))}
                     </ul>
@@ -231,7 +258,7 @@ export default function CourseOutline({ chapters, onChange, disabled, onDraftAct
       </Button>
       <p className="flex items-center gap-2 text-xs font-semibold text-inkMuted">
         <FileEdit className="h-3.5 w-3.5" aria-hidden="true" />
-        Changes are kept on this screen until you save the draft.
+        Changes stay here until saved. Removing a lesson or chapter and saving deletes its activities and results.
       </p>
     </div>
   );

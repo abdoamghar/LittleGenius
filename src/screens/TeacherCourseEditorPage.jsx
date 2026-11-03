@@ -13,9 +13,31 @@ import { ErrorState, LoadingState, StatusPill } from "@/components/common/StateB
 import CourseOutline from "@/components/teacher/CourseOutline";
 import CoursePreviewDialog from "@/components/teacher/CoursePreviewDialog";
 import AssignCourseDialog from "@/components/teacher/AssignCourseDialog";
+import ConfirmActionDialog from "@/components/common/ConfirmActionDialog";
 
 const SUBJECTS = ["Science", "Maths", "Reading"];
 const AGE_BANDS = ["Ages 6–8", "Ages 7–9", "Ages 8–10", "Ages 9–11", "Ages 10–12"];
+const FAMILY_MEMBERS_DEMO = {
+  title: "Family members",
+  minutes: 5,
+  summary: "Families can look different, but family members care for and support one another.",
+  intro: "A family is a group of people who care about and help one another.",
+  paragraphs: [
+    "A family may include parents, caregivers, brothers, sisters, grandparents, aunts, uncles, cousins, or other loved ones. Every family is unique.",
+    "Some family members live together, while others live in different homes. They can still care for and support one another.",
+    "We can show care by listening, helping, and spending time together.",
+  ],
+  examples: [
+    "A cousin is the child of your aunt or uncle.",
+    "A caregiver is an adult who helps keep a child safe and healthy.",
+  ],
+  keyIdea: "Families may look different, and family members can care for and support one another.",
+  keyWords: [
+    { word: "caregiver", hint: "An adult who helps care for a child.", definition: "An adult who helps care for a child." },
+    { word: "cousin", hint: "The child of your aunt or uncle.", definition: "The child of your aunt or uncle." },
+    { word: "support", hint: "To help someone when they need it.", definition: "To help someone when they need it." },
+  ],
+};
 const stripActivities = (chapters) =>
   chapters.map((chapter) => ({
     ...chapter,
@@ -36,6 +58,8 @@ export default function TeacherCourseEditorPage() {
   const [publishing, setPublishing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [deleteActivityTarget, setDeleteActivityTarget] = useState(null);
+  const [deletingActivity, setDeletingActivity] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,6 +93,42 @@ export default function TeacherCourseEditorPage() {
 
   const patch = (fields) => setDraft((prev) => ({ ...prev, ...fields }));
 
+  const insertFamilyMembersDemo = (chapterId, lessonId) => {
+    setDraft((prev) => ({
+      ...prev,
+      chapters: prev.chapters.map((chapter) => chapter.id !== chapterId ? chapter : {
+        ...chapter,
+        lessons: chapter.lessons.map((lesson) => lesson.id === lessonId
+          ? { ...lesson, ...JSON.parse(JSON.stringify(FAMILY_MEMBERS_DEMO)) }
+          : lesson),
+      }),
+    }));
+    setBanner({ tone: "leaf", text: "Family Members sample added to this lesson. Save the course before creating an AI activity." });
+  };
+
+  const requestDeleteActivity = (activity) => {
+    if (dirty) {
+      setBanner({ tone: "coral", text: "Save your course changes before deleting an activity, so your edits are not lost." });
+      return;
+    }
+    setDeleteActivityTarget(activity);
+  };
+
+  const deleteActivity = async () => {
+    if (!deleteActivityTarget) return;
+    setDeletingActivity(true);
+    try {
+      await api.deleteActivity(deleteActivityTarget.id);
+      toast({ title: "Activity deleted", description: `“${deleteActivityTarget.title}” and its saved results were removed.` });
+      setDeleteActivityTarget(null);
+      await load();
+    } catch (e) {
+      setBanner({ tone: "coral", text: e.message || "We could not delete the activity." });
+    } finally {
+      setDeletingActivity(false);
+    }
+  };
+
   const save = async () => {
     setSaving(true);
     setBanner(null);
@@ -81,7 +141,8 @@ export default function TeacherCourseEditorPage() {
         outcomes: draft.outcomes,
         chapters: stripActivities(draft.chapters),
       });
-      setBaseline(JSON.stringify({ ...draft, ...saved, chapters: draft.chapters }));
+      setDraft(saved);
+      setBaseline(JSON.stringify(saved));
       toast({ title: "Draft saved", description: "Your changes are kept. Students still cannot see it until you publish." });
     } catch (e) {
       setBanner({ tone: "coral", text: e.message || "We could not save the draft." });
@@ -232,9 +293,15 @@ export default function TeacherCourseEditorPage() {
             <CourseOutline
               chapters={draft.chapters}
               onChange={(chapters) => patch({ chapters })}
-              onDraftActivity={(lesson) =>
-                router.push(`/teacher/activities/new?courseId=${courseId}&lessonId=${lesson.id}`)
-              }
+              onDeleteActivity={requestDeleteActivity}
+              onInsertDemo={insertFamilyMembersDemo}
+              onDraftActivity={(lesson) => {
+                if (dirty) {
+                  setBanner({ tone: "coral", text: "Save your course changes before drafting an AI activity from this lesson." });
+                  return;
+                }
+                router.push(`/teacher/activities/new?courseId=${courseId}&lessonId=${lesson.id}`);
+              }}
             />
           </section>
         </div>
@@ -312,6 +379,15 @@ export default function TeacherCourseEditorPage() {
           toast({ title: "Saved", description: "Class assignments updated." });
           load();
         }}
+      />
+      <ConfirmActionDialog
+        open={Boolean(deleteActivityTarget)}
+        onOpenChange={(open) => !open && setDeleteActivityTarget(null)}
+        title="Delete this activity?"
+        description={deleteActivityTarget ? `“${deleteActivityTarget.title}” and its saved student results will be permanently deleted.` : "This activity will be permanently deleted."}
+        confirmLabel="Delete activity"
+        pending={deletingActivity}
+        onConfirm={deleteActivity}
       />
     </div>
   );

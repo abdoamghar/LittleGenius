@@ -1,11 +1,13 @@
 # Dependencies
 /node_modules/
+backend/node_modules/
 
 # Next.js build output
 /.next/
 /out/
 /build/
 /dist/
+backend/dist/
 
 # Test and browser tooling output
 /coverage/
@@ -16,6 +18,8 @@
 # Local environment files (keep the safe template)
 .env*
 !.env.example
+backend/.env*
+!backend/.env.example
 
 # Logs and debug output
 *.log
@@ -27,6 +31,8 @@ pnpm-debug.log*
 /.vercel/
 /.turbo/
 *.tsbuildinfo
+backend/.venv/
+backend/**/__pycache__/
 
 # Operating system files
 .DS_Store

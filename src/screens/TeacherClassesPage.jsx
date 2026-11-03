@@ -6,12 +6,17 @@ import PageHeader from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateBlocks";
 import ClassSummaryCard from "@/components/teacher/ClassSummaryCard";
 import CreateClassDialog from "@/components/teacher/CreateClassDialog";
+import ConfirmActionDialog from "@/components/common/ConfirmActionDialog";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function TeacherClassesPage() {
+  const { toast } = useToast();
   const [classes, setClasses] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -28,6 +33,21 @@ export default function TeacherClassesPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const deleteClass = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.deleteClass(deleteTarget.id);
+      toast({ title: "Class deleted", description: `${deleteTarget.name} was removed.` });
+      setDeleteTarget(null);
+      await load();
+    } catch (e) {
+      toast({ title: "Could not delete class", description: e.message || "Please try again." });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div>
@@ -47,7 +67,7 @@ export default function TeacherClassesPage() {
       {!loading && !error && classes?.length ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {classes.map((entry) => (
-            <ClassSummaryCard key={entry.kelas.id} entry={entry} />
+            <ClassSummaryCard key={entry.kelas.id} entry={entry} onDelete={setDeleteTarget} />
           ))}
         </div>
       ) : null}
@@ -59,6 +79,15 @@ export default function TeacherClassesPage() {
         />
       ) : null}
       <CreateClassDialog open={createOpen} onOpenChange={setCreateOpen} onCreated={load} />
+      <ConfirmActionDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete this class?"
+        description={deleteTarget ? `“${deleteTarget.name}” will be removed. Students will leave this class, but their accounts and learning results will be kept.` : "This class will be deleted."}
+        confirmLabel="Delete class"
+        pending={deleting}
+        onConfirm={deleteClass}
+      />
     </div>
   );
 }

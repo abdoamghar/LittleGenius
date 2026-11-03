@@ -1,13 +1,14 @@
 import React from "react";
 import Link from "next/link";
-import { LifeBuoy } from "lucide-react";
+import { LifeBuoy, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import ProgressMeter from "@/components/common/ProgressMeter";
 import { StatusPill } from "@/components/common/StateBlocks";
 
 const TONES = ["navy", "plum", "leaf"];
 
 /** Class roster with each learner's progress across the class courses. */
-export default function RosterTable({ roster, courses }) {
+export default function RosterTable({ roster, courses, onRemove }) {
   return (
     <div className="space-y-3">
       <div className="hidden grid-cols-[1.4fr_repeat(2,1fr)_auto] gap-4 px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-inkMuted lg:grid">
@@ -61,6 +62,17 @@ export default function RosterTable({ roster, courses }) {
               >
                 View
               </Link>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="text-coral-600"
+                onClick={() => onRemove(row.student)}
+                aria-label={`Remove ${row.student.name} from class`}
+                title="Remove from class"
+              >
+                <Trash2 aria-hidden="true" />
+              </Button>
             </div>
           </li>
         ))}

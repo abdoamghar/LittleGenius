@@ -1,13 +1,13 @@
 import React from "react";
 import Link from "next/link";
-import { ClipboardList, FileEdit, Layers, Wand2 } from "lucide-react";
+import { ClipboardList, FileEdit, Layers, Trash2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProgressMeter from "@/components/common/ProgressMeter";
 import { StatusPill } from "@/components/common/StateBlocks";
 import SubjectArt from "@/components/common/SubjectArt";
 
 /** A course as the teacher sees it: state, content counts and who is enrolled. */
-export default function CourseSummaryCard({ entry, onAssign, onPreview }) {
+export default function CourseSummaryCard({ entry, onAssign, onPreview, onDelete }) {
   const { course, lessonCount, activityCount, draftCount, classes, studentCount, avgProgress } = entry;
   const published = course.status === "published";
 
@@ -68,6 +68,10 @@ export default function CourseSummaryCard({ entry, onAssign, onPreview }) {
         </Button>
         <Button variant="outline" onClick={() => onAssign(entry)}>
           Assign
+        </Button>
+        <Button variant="ghost" className="gap-2 text-coral-600" onClick={() => onDelete(course)} aria-label={`Delete ${course.title}`}>
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+          Delete
         </Button>
       </div>
     </article>

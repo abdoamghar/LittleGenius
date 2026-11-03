@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles, Wand2 } from "lucide-react";
+import { Sparkles, Trash2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import PageHeader from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState, StatusPill } from "@/components/common/StateBlocks";
+import ConfirmActionDialog from "@/components/common/ConfirmActionDialog";
+import { useToast } from "@/components/ui/use-toast";
 
 const TYPE_LABEL = { quiz: "Quiz", match: "Matching", fill: "Fill in the blanks" };
 
-function DraftRow({ row, approved }) {
+function DraftRow({ row, approved, onDelete }) {
   return (
     <li className="lg-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
       <span
@@ -36,15 +38,21 @@ function DraftRow({ row, approved }) {
         <Button asChild variant={approved ? "outline" : "default"} className="gap-2">
           <Link href={`/teacher/activities/${row.id}/review`}>{approved ? "Open" : "Review & approve"}</Link>
         </Button>
+        <Button type="button" variant="ghost" size="icon" className="text-coral-600" onClick={() => onDelete(row)} aria-label={`Delete ${row.title}`} title="Delete activity">
+          <Trash2 aria-hidden="true" />
+        </Button>
       </div>
     </li>
   );
 }
 
 export default function TeacherDraftsPage() {
+  const { toast } = useToast();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,6 +69,21 @@ export default function TeacherDraftsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const deleteActivity = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.deleteActivity(deleteTarget.id);
+      toast({ title: "Activity deleted", description: `“${deleteTarget.title}” and its saved results were removed.` });
+      setDeleteTarget(null);
+      await load();
+    } catch (e) {
+      toast({ title: "Could not delete activity", description: e.message || "Please try again." });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -93,7 +116,7 @@ export default function TeacherDraftsPage() {
             {data.pending.length ? (
               <ul className="space-y-3">
                 {data.pending.map((row) => (
-                  <DraftRow key={row.id} row={row} />
+                  <DraftRow key={row.id} row={row} onDelete={setDeleteTarget} />
                 ))}
               </ul>
             ) : (
@@ -117,7 +140,7 @@ export default function TeacherDraftsPage() {
             {data.approved.length ? (
               <ul className="space-y-3">
                 {data.approved.map((row) => (
-                  <DraftRow key={row.id} row={row} approved />
+                  <DraftRow key={row.id} row={row} approved onDelete={setDeleteTarget} />
                 ))}
               </ul>
             ) : (
@@ -128,6 +151,15 @@ export default function TeacherDraftsPage() {
           </section>
         </>
       ) : null}
+      <ConfirmActionDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete this activity?"
+        description={deleteTarget ? `“${deleteTarget.title}” will be permanently deleted, along with its saved student results.` : "This activity will be permanently deleted."}
+        confirmLabel="Delete activity"
+        pending={deleting}
+        onConfirm={deleteActivity}
+      />
     </div>
   );
 }

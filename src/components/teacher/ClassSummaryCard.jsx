@@ -1,12 +1,12 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, DoorOpen, Users } from "lucide-react";
+import { ArrowRight, DoorOpen, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProgressMeter from "@/components/common/ProgressMeter";
 import { StatusPill } from "@/components/common/StateBlocks";
 
 /** One class at a glance: who is in it, how far along, who needs help. */
-export default function ClassSummaryCard({ entry }) {
+export default function ClassSummaryCard({ entry, onDelete }) {
   const { kelas, studentCount, courseCount, avgProgress, needingHelp } = entry;
   return (
     <article className="lg-card flex flex-col gap-4 p-5">
@@ -60,6 +60,12 @@ export default function ClassSummaryCard({ entry }) {
         <Button asChild variant="outline">
           <Link href={`/teacher/progress?class=${kelas.id}`}>Progress</Link>
         </Button>
+        {typeof onDelete === "function" ? (
+          <Button variant="ghost" className="gap-2 text-coral-600" onClick={() => onDelete(kelas)} aria-label={`Delete ${kelas.name}`}>
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+            Delete
+          </Button>
+        ) : null}
       </div>
     </article>
   );

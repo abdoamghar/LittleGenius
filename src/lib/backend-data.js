@@ -171,6 +171,18 @@ function totalFor(activity) {
   return activity.parts?.filter((part) => part.blankId).length || 0;
 }
 
+function lessonTextForActivity(lesson) {
+  const exampleText = (lesson.examples || []).map((example) =>
+    typeof example === "string" ? example : [example.title, example.text, example.explanation].filter(Boolean).join(": ")
+  );
+  const keywordText = (lesson.keyWords || []).map((entry) =>
+    typeof entry === "string" ? entry : [entry.word, entry.definition].filter(Boolean).join(": ")
+  );
+  return [lesson.summary, lesson.intro, ...(lesson.paragraphs || []), ...exampleText, lesson.keyIdea, ...keywordText]
+    .filter((part) => typeof part === "string" && part.trim())
+    .join("\n");
+}
+
 function mappedAttempt(result) {
   if (!result) return null;
   return {
@@ -345,6 +357,14 @@ export const backendData = {
     return mappedClass(raw);
   },
 
+  async deleteClass(classId) {
+    return request(`/api/classes/${classId}`, { method: "DELETE" });
+  },
+
+  async removeStudentFromClass(classId, studentId) {
+    return request(`/api/classes/${classId}/students/${studentId}`, { method: "DELETE" });
+  },
+
   async getClass(classId) {
     const rows = await request("/api/classes");
     const raw = rows.find((row) => idOf(row) === classId);
@@ -460,7 +480,23 @@ export const backendData = {
         else await request("/api/sections", { method: "POST", body: JSON.stringify(body) });
       }
     }
-    return { ...mapCourse(updated), chapters: patch.chapters || current.chapters };
+    const keptChapterIds = new Set((patch.chapters || []).map((chapter) => chapter.id).filter((id) => /^[a-f\d]{24}$/i.test(id)));
+    const removedChapters = current.chapters.filter((chapter) => !keptChapterIds.has(chapter.id));
+    const removedChapterIds = new Set(removedChapters.map((chapter) => chapter.id));
+    const keptLessonIds = new Set((patch.chapters || []).flatMap((chapter) => chapter.lessons || []).map((lesson) => lesson.id).filter((id) => /^[a-f\d]{24}$/i.test(id)));
+    const removedLessons = current.chapters
+      .filter((chapter) => !removedChapterIds.has(chapter.id))
+      .flatMap((chapter) => chapter.lessons)
+      .filter((lesson) => /^[a-f\d]{24}$/i.test(lesson.id) && !keptLessonIds.has(lesson.id));
+
+    for (const lesson of removedLessons) await request(`/api/sections/${lesson.id}`, { method: "DELETE" });
+    for (const chapter of removedChapters) await request(`/api/chapters/${chapter.id}`, { method: "DELETE" });
+
+    return getCourseTree(idOf(updated));
+  },
+
+  async deleteCourse(courseId) {
+    return request(`/api/courses/${courseId}`, { method: "DELETE" });
   },
 
   async publishCourse(courseId) {
@@ -494,16 +530,15 @@ export const backendData = {
 
   async lessonsForDrafting() {
     const rows=await request("/api/courses"); const out=[];
-    for(const raw of rows){const course=await getCourseTree(idOf(raw));out.push({id:course.id,title:course.title,subject:course.subject,lessons:course.chapters.flatMap((chapter)=>chapter.lessons.map((lesson)=>({id:lesson.id,title:lesson.title,summary:lesson.summary||"",keyIdea:lesson.keyIdea||"",keyWordCount:(lesson.keyWords||[]).length}))) });}
+    for(const raw of rows){const course=await getCourseTree(idOf(raw));out.push({id:course.id,title:course.title,subject:course.subject,lessons:course.chapters.flatMap((chapter)=>chapter.lessons.map((lesson)=>({id:lesson.id,title:lesson.title,summary:lesson.summary||"",keyIdea:lesson.keyIdea||"",keyWordCount:(lesson.keyWords||[]).length,hasLessonContent:Boolean(lessonTextForActivity(lesson).trim())}))) });}
     return out;
   },
 
   async generateDraft({courseId,lessonId,type}) {
     const course=await getCourseTree(courseId); const lesson=course.chapters.flatMap((chapter)=>chapter.lessons).find((item)=>item.id===lessonId);
     if(!lesson) throw new Error("Choose a lesson first.");
-    const exampleText=(lesson.examples||[]).map((example)=>typeof example==="string"?example:[example.title,example.text,example.explanation].filter(Boolean).join(": "));
-    const keywordText=(lesson.keyWords||[]).map((entry)=>typeof entry==="string"?entry:[entry.word,entry.definition].filter(Boolean).join(": "));
-    const lessonContent=[lesson.summary,lesson.intro,...(lesson.paragraphs||[]),...exampleText,lesson.keyIdea,...keywordText].filter((part)=>typeof part==="string"&&part.trim()).join("\n");
+    const lessonContent=lessonTextForActivity(lesson);
+    if(!lessonContent.trim()) throw new Error("This lesson has no lesson text yet. Add a lesson summary in the course editor, save the course, then try again.");
     const data=await request("/api/ai/activities",{method:"POST",body:JSON.stringify({sectionId:lessonId,lessonContent,type:typeToApi(type),difficulty:"easy",title:`${type === "quiz" ? "Check your understanding" : type === "match" ? "Match the key words" : "Fill in the missing words"}: ${lesson.title}`})});
     return mapActivity(data.activity,{courseId,courseTitle:course.title,lessonId,lessonTitle:lesson.title,art:lesson.art||course.art},false);
   },
@@ -519,7 +554,8 @@ export const backendData = {
     const data=await request(`/api/activities/${activityId}`,{method:"PUT",body:JSON.stringify({status:"published"})}); return mapActivity(data,{},false);
   },
 
-  async discardDraft(activityId) { return request(`/api/activities/${activityId}`,{method:"DELETE"}); },
+  async deleteActivity(activityId) { return request(`/api/activities/${activityId}`, { method: "DELETE" }); },
+  async discardDraft(activityId) { return this.deleteActivity(activityId); },
 
   async getTeacherProgress() {
     const classes=await this.listClasses();
