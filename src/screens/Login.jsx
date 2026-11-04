@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, BookOpenText, GraduationCap, Loader2, Lock, Mail, Sparkles } from "lucide-react";
+import { AlertCircle, BookOpenText, CircleCheck, GraduationCap, Loader2, Lock, Mail, PencilLine, Sparkles, Sprout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { Input } from "@/components/ui/input";
@@ -69,38 +69,60 @@ export default function Login() {
 
   return (
     <div className="lg-auth-world lg-login-page grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
-      {/* storybook panel */}
-      <section className="lg-login-story relative hidden flex-col justify-between bg-navy-700 p-10 text-white lg:flex">
-        <BrandMark tone="light" withTagline />
-        <div className="lg-login-story-content space-y-6">
-          <h1 className="font-display text-4xl font-bold leading-tight">
-            Every child gets one clear next step.
-          </h1>
-          <p className="max-w-md text-base text-white/80">
-            LittleGenius keeps lessons, activities and progress in one place — for the six-year-old reading their
-            first words and the twelve-year-old comparing fractions.
+      {/* learning story panel */}
+      <section className="lg-login-story relative hidden min-h-screen flex-col justify-between overflow-hidden border-r border-border/80 px-8 py-7 text-ink lg:flex xl:px-12">
+        <div className="pointer-events-none absolute -left-20 top-28 h-64 w-64 rounded-full bg-sun-200/40 blur-3xl" aria-hidden="true" />
+        <div className="pointer-events-none absolute -bottom-24 right-8 h-72 w-72 rounded-full bg-leaf-100/60 blur-3xl" aria-hidden="true" />
+        <div className="relative z-10">
+          <BrandMark withTagline />
+        </div>
+
+        <div className="lg-login-story-content relative z-10 mx-auto w-full max-w-xl py-8">
+          <p className="lg-page-kicker mb-4 gap-2 border-leaf-200 bg-leaf-50 text-leaf-600">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            A place to learn and grow
           </p>
-          <div className="lg-login-art relative flex h-56 w-full max-w-md items-center justify-center overflow-hidden rounded-3xl bg-white/10">
+          <h1 className="max-w-lg font-display text-4xl font-extrabold leading-[1.08] text-navy-800 xl:text-5xl">
+            Little steps can lead to big discoveries.
+          </h1>
+          <p className="mt-4 max-w-md text-base leading-relaxed text-inkMuted">
+            Read a lesson, try a fun activity, and see how much you have learned. Teachers are here to help every step of the way.
+          </p>
+
+          <div className="lg-login-journey relative mt-7 overflow-hidden rounded-[2rem] border border-border bg-card/90 px-5 py-5 shadow-paper sm:px-6">
+            <p className="mb-4 text-[11px] font-extrabold uppercase tracking-[0.16em] text-navy-600">Your learning trail</p>
+            <svg className="pointer-events-none absolute left-10 top-[4.4rem] h-[7.25rem] w-16 text-sun-400/80" viewBox="0 0 48 116" fill="none" aria-hidden="true">
+              <path d="M24 4C48 22 2 34 24 55C46 76 2 89 24 112" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="2 8" />
+            </svg>
+            <ol className="relative z-10 space-y-3">
+              <li className="flex items-center gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sky-100 text-navy-700 ring-4 ring-card"><BookOpenText className="h-4 w-4" aria-hidden="true" /></span>
+                <span className="text-sm font-bold text-ink">Read something new</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sun-100 text-sun-600 ring-4 ring-card"><PencilLine className="h-4 w-4" aria-hidden="true" /></span>
+                <span className="text-sm font-bold text-ink">Try it for yourself</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-leaf-100 text-leaf-700 ring-4 ring-card"><Sprout className="h-4 w-4" aria-hidden="true" /></span>
+                <span className="text-sm font-bold text-ink">Watch your knowledge grow</span>
+              </li>
+            </ol>
             <Image
               src="/learning-art/student-corner.webp"
-              alt="Pip the fox discovering a growing plant."
+              alt="Pip the fox helping a little plant grow."
               fittingType="fit"
-              className="h-full w-full object-contain p-2"
+              className="pointer-events-none absolute -bottom-2 -right-4 hidden h-44 w-44 object-contain sm:block xl:h-48 xl:w-48"
             />
+            <div className="mt-4 flex items-center gap-2 border-t border-border/80 pt-3 text-xs font-semibold text-inkMuted sm:max-w-[60%]">
+              <CircleCheck className="h-4 w-4 shrink-0 text-leaf-600" aria-hidden="true" />
+              Teachers check activities before learners see them.
+            </div>
           </div>
-          <ul className="space-y-2 text-sm text-white/85">
-            <li className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-sun-400" aria-hidden="true" />
-              Warm, short instructions that children can read on their own.
-            </li>
-            <li className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-sun-400" aria-hidden="true" />
-              Teachers approve every AI-drafted activity before students see it.
-            </li>
-          </ul>
         </div>
-        <p className="text-xs text-white/60">
-          Explore with sample content: this prototype uses made-up classes, learners and results.
+
+        <p className="relative z-10 text-xs font-semibold text-navy-700/70">
+          For curious learners, ages 6–12, and the teachers who guide them.
         </p>
       </section>
 
