@@ -164,15 +164,66 @@
 
 @media (min-width: 1024px) and (max-height: 700px) {
   .lg-login-story {
-    padding: 1.5rem 2.25rem;
+    padding: 1.25rem 2rem;
+  }
+
+  .lg-login-story-content {
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   .lg-login-story-content > :not([hidden]) ~ :not([hidden]) {
-    margin-top: 1rem;
+    margin-top: 0.75rem;
+  }
+
+  .lg-login-story-content h1 {
+    font-size: 2.25rem;
+  }
+
+  .lg-login-journey {
+    margin-top: 0.75rem;
+    padding-top: 0.875rem;
+    padding-bottom: 0.875rem;
+  }
+
+  .lg-login-journey > p {
+    margin-bottom: 0.5rem;
+  }
+
+  .lg-login-journey ol {
+    gap: 0.5rem;
+  }
+
+  .lg-login-journey li > span:first-child {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .lg-login-journey > img {
+    width: 10rem;
+    height: 10rem;
+  }
+
+  .lg-login-journey > div {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+  }
+
+  .lg-login-journey > svg {
+    top: 3.75rem;
+    height: 5.5rem;
   }
 
   .lg-login-form {
     padding-top: 1rem;
     padding-bottom: 1rem;
+  }
+
+  .lg-login-form .lg-card > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1rem;
+  }
+
+  .lg-login-form .lg-card {
+    padding: 1.25rem;
   }
 }
