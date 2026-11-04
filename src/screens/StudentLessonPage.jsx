@@ -105,8 +105,8 @@ export default function StudentLessonPage() {
             <section className="rounded-3xl border-2 border-dashed border-navy-200 bg-navy-50/60 p-5">
               <h2 className="mb-3 font-display text-lg font-bold text-navy-800">For example</h2>
               <ul className="space-y-2">
-                {lesson.examples.map((example) => (
-                  <li key={example} className="flex items-start gap-2 text-base text-ink">
+                {lesson.examples.map((example, index) => (
+                  <li key={`${lesson.id}-example-${index}`} className="flex items-start gap-2 text-base text-ink">
                     <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-sun-400" aria-hidden="true" />
                     {example}
                   </li>
@@ -115,20 +115,22 @@ export default function StudentLessonPage() {
             </section>
           ) : null}
 
-          <section className="rounded-3xl bg-sun-50 p-5">
-            <h2 className="mb-2 flex items-center gap-2 font-display text-lg font-bold text-ink">
-              <Lightbulb className="h-5 w-5 text-sun-600" aria-hidden="true" />
-              The big idea
-            </h2>
-            <p className="text-base font-semibold text-ink">{lesson.keyIdea}</p>
-          </section>
+          {lesson.keyIdea ? (
+            <section className="rounded-3xl bg-sun-50 p-5">
+              <h2 className="mb-2 flex items-center gap-2 font-display text-lg font-bold text-ink">
+                <Lightbulb className="h-5 w-5 text-sun-600" aria-hidden="true" />
+                The big idea
+              </h2>
+              <p className="text-base font-semibold text-ink">{lesson.keyIdea}</p>
+            </section>
+          ) : null}
 
           {lesson.keyWords?.length ? (
             <section className="lg-card p-5">
               <h2 className="mb-3 font-display text-lg font-bold text-ink">Words to know</h2>
               <dl className="grid gap-2 sm:grid-cols-2">
-                {lesson.keyWords.map((entry) => (
-                  <div key={entry.word} className="rounded-2xl bg-paper px-3 py-2.5">
+                {lesson.keyWords.map((entry, index) => (
+                  <div key={`${lesson.id}-word-${index}`} className="rounded-2xl bg-paper px-3 py-2.5">
                     <dt className="text-sm font-bold text-navy-700">{entry.word}</dt>
                     <dd className="text-sm text-inkMuted">{entry.hint}</dd>
                   </div>

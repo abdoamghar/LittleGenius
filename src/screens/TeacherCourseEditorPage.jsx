@@ -41,7 +41,21 @@ const FAMILY_MEMBERS_DEMO = {
 const stripActivities = (chapters) =>
   chapters.map((chapter) => ({
     ...chapter,
-    lessons: chapter.lessons.map(({ activities: _activities, ...lesson }) => lesson),
+    lessons: chapter.lessons.map(({ activities: _activities, ...lesson }) => ({
+      ...lesson,
+      examples: (lesson.examples || [])
+        .map((example) => typeof example === "string" ? example.trim() : String(example?.text || example?.title || "").trim())
+        .filter(Boolean),
+      keyWords: (lesson.keyWords || [])
+        .map((entry) => typeof entry === "string" ? { word: entry.trim(), hint: "", definition: "" } : entry)
+        .filter((entry) => String(entry.word || "").trim())
+        .map((entry) => ({
+          ...entry,
+          word: String(entry.word).trim(),
+          hint: String(entry.hint || entry.definition || "").trim(),
+          definition: String(entry.definition || entry.hint || "").trim(),
+        })),
+    })),
   }));
 
 export default function TeacherCourseEditorPage() {
